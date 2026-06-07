@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Queue Tracker - Klikka Photobooth</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #eef2f7; text-align: center; margin: 0; padding: 20px; }
+    .card { background: white; max-width: 400px; margin: 40px auto; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+    h1 { font-size: 20px; margin-bottom: 5px; color: #333; }
+    .booth-tag { background: #333; color: white; padding: 4px 12px; border-radius: 20px; display: inline-block; font-size: 12px; margin-bottom: 25px; font-weight: bold; }
+    .status-num { font-size: 54px; font-weight: bold; color: #007bff; margin: 15px 0; }
+    .label { color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+    .info-grid { display: flex; justify-content: space-around; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+    .info-item { width: 45%; }
+    .info-val { font-size: 20px; font-weight: bold; color: #222; }
+    .refresh-text { font-size: 11px; color: #aaa; margin-top: 25px; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Klikka Photobooth</h1>
+    <div class="booth-tag" id="displayBooth">BOOTH: LOADING</div>
+    
+    <div class="label">Posisi Antrian Kamu</div>
+    <div class="status-num" id="userPosition">-</div>
+    
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="label" style="font-size:11px;">Nomor Aktif</div>
+        <div class="info-val" id="activeNumber">LOADING</div>
+      </div>
+      <div class="info-item">
+        <div class="label" style="font-size:11px;">Sisa Tungguan</div>
+        <div class="info-val" id="totalWaiting">LOADING</div>
+      </div>
+    </div>
+    
+    <div class="refresh-text">Data diperbarui otomatis setiap 3 detik secara real-time.</div>
+  </div>
+
+  <script>
+    // MASUKKAN URL DEPLOYMENT WEB APP APPS SCRIPT KAMU DI SINI
+    const API_URL = "https://script.google.com/macros/s/AKfycbxLV8V8Wq8Nq15tkivBmyN5tLTfCdO7KtlUTgs5BpR-yWjkpuGzanjyvL5FP-GjEW4ONg/exec";
+
+    function getQueryParams() {
+      let params = {};
+      window.location.search.substring(1).split("&").forEach(pair => {
+        let kv = pair.split("=");
+        params[kv[0]] = decodeURIComponent(kv[1]);
+      });
+      return params;
+    }
+
+    function trackLive() {
+      const q = getQueryParams();
+      if(!q.booth || !q.nomor) {
+        document.body.innerHTML = "<h3>Error: Informasi Nomor Tiket Antrian Tidak Valid / Kurang Lengkap</h3>";
+        return;
+      }
+
+      document.getElementById('displayBooth').innerText = `BOOTH: ${q.booth} (Tiket ${q.nomor})`;
+
+      fetch(`${API_URL}?action=trackQueue&booth=${q.booth}&nomor=${q.nomor}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('userPosition').innerText = data.position;
+          document.getElementById('activeNumber').innerText = data.activeNumber;
+          document.getElementById('totalWaiting').innerText = data.totalWaiting + " Orang";
+        })
+        .catch(err => console.log("Gagal memuat tracking: ", err));
+    }
+
+    setInterval(trackLive, 3000); // Polling otomatis setiap 3 detik
+    window.onload = trackLive;
+  </script>
+</body>
+</html>
